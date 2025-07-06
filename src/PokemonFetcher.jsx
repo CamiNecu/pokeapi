@@ -13,43 +13,43 @@ const PokemonFetcher = () => {
   const [error, setError] = useState(null);
 
   // Cargar Pokémon aleatorios al montar el componente
-  useEffect(() => {
-    const fetchPokemonesAleatorios = async () => {
-      try {
-        setCargando(true);
-        setError(null);
-        const fetchedPokemones = [];
-        const pokemonIds = new Set();
+  const fetchPokemonesAleatorios = async () => {
+    try {
+      setCargando(true);
+      setError(null);
+      const fetchedPokemones = [];
+      const pokemonIds = new Set();
 
-        while (pokemonIds.size < 8) {
-          const randomId = Math.floor(Math.random() * 898) + 1;
-          pokemonIds.add(randomId);
-        }
-
-        const idsArray = Array.from(pokemonIds);
-
-        for (const id of idsArray) {
-          const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
-          if (!response.ok) {
-            throw new Error(`Error al cargar el Pokémon con ID ${id}: ${response.statusText}`);
-          }
-          const data = await response.json();
-          fetchedPokemones.push({
-            id: data.id,
-            nombre: data.name,
-            imagen: data.sprites.front_default,
-            tipos: data.types.map(typeInfo => typeInfo.type.name),
-          });
-        }
-
-        setPokemonesAleatorios(fetchedPokemones);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setCargando(false);
+      while (pokemonIds.size < 8) {
+        const randomId = Math.floor(Math.random() * 898) + 1;
+        pokemonIds.add(randomId);
       }
-    };
 
+      const idsArray = Array.from(pokemonIds);
+
+      for (const id of idsArray) {
+        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
+        if (!response.ok) {
+          throw new Error(`Error al cargar el Pokémon con ID ${id}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        fetchedPokemones.push({
+          id: data.id,
+          nombre: data.name,
+          imagen: data.sprites.front_default,
+          tipos: data.types.map(typeInfo => typeInfo.type.name),
+        });
+      }
+
+      setPokemonesAleatorios(fetchedPokemones);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  useEffect(() => {
     fetchPokemonesAleatorios();
   }, []);
 
@@ -114,6 +114,10 @@ const PokemonFetcher = () => {
   return (
     <div className="pokemon-container">
       <h2>Tus 8 Pokémon Aleatorios</h2>
+
+      <button onClick={fetchPokemonesAleatorios} style={{marginBottom: '20px'}}>
+        Rerrol 
+      </button>
 
       {cargando && <div>Cargando Pokémon...</div>}
       {error && <div className="error">Error: {error}</div>}
