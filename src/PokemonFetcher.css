@@ -65,3 +65,16 @@
   padding: 15px;
   border-radius: 8px;
 }
+
+.tipo-selector {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.tipo-selector select {
+  padding: 8px;
+  font-size: 1em;
+  border-radius: 5px;
+  margin-left: 10px;
+}

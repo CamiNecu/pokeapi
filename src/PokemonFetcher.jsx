@@ -1,25 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import './PokemonFetcher.css'; // Opcional: para estilos básicos
+import './PokemonFetcher.css';
+
+// Función para capitalizar nombres
+const capitalizar = (texto) => texto.charAt(0).toUpperCase() + texto.slice(1);
 
 const PokemonFetcher = () => {
-  const [pokemones, setPokemones] = useState([]);
+  const [pokemonesAleatorios, setPokemonesAleatorios] = useState([]);
+  const [pokemonesPorTipo, setPokemonesPorTipo] = useState([]);
+  const [tipos, setTipos] = useState([]);
+  const [tipoSeleccionado, setTipoSeleccionado] = useState('');
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-useEffect(() => {
-    const fetchPokemones = async () => {
+
+  // Cargar Pokémon aleatorios al montar el componente
+  useEffect(() => {
+    const fetchPokemonesAleatorios = async () => {
       try {
         setCargando(true);
         setError(null);
         const fetchedPokemones = [];
-        const pokemonIds = new Set(); // Usar un Set para asegurar IDs únicos
+        const pokemonIds = new Set();
 
-        // Generar 4 IDs de Pokémon únicos aleatorios
         while (pokemonIds.size < 8) {
-          const randomId = Math.floor(Math.random() * 898) + 1; // 898 es el número actual de Pokémon en la PokeAPI (puedes ajustarlo)
+          const randomId = Math.floor(Math.random() * 898) + 1;
           pokemonIds.add(randomId);
         }
 
-        // Convertir el Set a un array para iterar
         const idsArray = Array.from(pokemonIds);
 
         for (const id of idsArray) {
@@ -35,7 +41,8 @@ useEffect(() => {
             tipos: data.types.map(typeInfo => typeInfo.type.name),
           });
         }
-        setPokemones(fetchedPokemones);
+
+        setPokemonesAleatorios(fetchedPokemones);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -43,36 +50,114 @@ useEffect(() => {
       }
     };
 
-    fetchPokemones();
-  }, []); // El array vacío asegura que se ejecute solo una vez al montar el componente
+    fetchPokemonesAleatorios();
+  }, []);
 
-  if (cargando) {
-    return <div className="pokemon-container">Cargando Pokémon...</div>;
-  }
+  // Obtener lista de tipos desde la API
+  useEffect(() => {
+    const fetchTipos = async () => {
+      try {
+        const res = await fetch('https://pokeapi.co/api/v2/type/');
+        const data = await res.json();
+        const tiposValidos = data.results.filter(t => !["shadow", "unknown"].includes(t.name));
+        setTipos(tiposValidos);
+      } catch (err) {
+        console.error('Error al obtener tipos:', err);
+      }
+    };
 
-  if (error) {
-    return <div className="pokemon-container error">Error: {error}</div>;
-  }
+    fetchTipos();
+  }, []);
+
+  // Manejar cambio de tipo
+  const handleTipoChange = async (e) => {
+    const tipo = e.target.value;
+    setTipoSeleccionado(tipo);
+    if (!tipo) {
+      setPokemonesPorTipo([]);
+      return;
+    }
+
+    try {
+      setCargando(true);
+      setError(null);
+      const res = await fetch(`https://pokeapi.co/api/v2/type/${tipo}`);
+      const data = await res.json();
+
+      const pokes = data.pokemon; // TODOS los Pokémon del tipo seleccionado
+
+      const detalles = [];
+
+      for (const poke of pokes) {
+        const pokeRes = await fetch(poke.pokemon.url);
+        const pokeData = await pokeRes.json();
+
+        // Solo agregar si tiene imagen para evitar espacios en blanco
+        if (pokeData.sprites.front_default) {
+          detalles.push({
+            id: pokeData.id,
+            nombre: pokeData.name,
+            imagen: pokeData.sprites.front_default,
+            tipos: pokeData.types.map(t => t.type.name),
+          });
+        }
+      }
+
+      setPokemonesPorTipo(detalles);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCargando(false);
+    }
+  };
 
   return (
-    <div className='pokemon-container'>
-      <h2>Tus 4 Pokémon Aleatorios</h2>
-      <div className="pokemon-list"> 
-        {pokemones.map(pokemon => (
+    <div className="pokemon-container">
+      <h2>Tus 8 Pokémon Aleatorios</h2>
+
+      {cargando && <div>Cargando Pokémon...</div>}
+      {error && <div className="error">Error: {error}</div>}
+
+      <div className="pokemon-list">
+        {pokemonesAleatorios.map(pokemon => (
           <div key={pokemon.id} className="pokemon-card">
-            <h3>{pokemon.nombre.charAt(0).toUpperCase() + pokemon.nombre.slice(1)}</h3>
+            <h3>{capitalizar(pokemon.nombre)}</h3>
             <img src={pokemon.imagen} alt={pokemon.nombre} />
-            <p>
-              **Tipos:** {pokemon.tipos.map(type => type.charAt(0).toUpperCase() + type.slice(1)).join(', ')}
-            </p>
+            <p>Tipos: {pokemon.tipos.map(capitalizar).join(', ')}</p>
           </div>
         ))}
       </div>
+
+      <hr style={{ margin: '30px 0' }} />
+
+      <div className="tipo-selector">
+        <label htmlFor="tipo">Buscar por tipo:</label>
+        <select id="tipo" value={tipoSeleccionado} onChange={handleTipoChange}>
+          <option value="">-- Selecciona un tipo --</option>
+          {tipos.map(t => (
+            <option key={t.name} value={t.name}>
+              {capitalizar(t.name)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {pokemonesPorTipo.length > 0 && (
+        <>
+          <h2>Pokémon tipo {capitalizar(tipoSeleccionado)}</h2>
+          <div className="pokemon-list">
+            {pokemonesPorTipo.map(pokemon => (
+              <div key={pokemon.id} className="pokemon-card">
+                <h3>{capitalizar(pokemon.nombre)}</h3>
+                <img src={pokemon.imagen} alt={pokemon.nombre} />
+                <p>Tipos: {pokemon.tipos.map(capitalizar).join(', ')}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };
 
 export default PokemonFetcher;
-
-// buscar pokemon por tipo que pueda mostrar todos los pokemons de tipo fuego por 
-// ejemplo pokeapi
