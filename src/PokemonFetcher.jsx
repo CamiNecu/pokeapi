@@ -93,14 +93,12 @@ const PokemonFetcher = () => {
         const pokeData = await pokeRes.json();
 
         // Solo agregar si tiene imagen para evitar espacios en blanco
-        if (pokeData.sprites.front_default) {
-          detalles.push({
-            id: pokeData.id,
-            nombre: pokeData.name,
-            imagen: pokeData.sprites.front_default,
-            tipos: pokeData.types.map(t => t.type.name),
-          });
-        }
+        detalles.push({
+          id: pokeData.id,
+          nombre: pokeData.name,
+          imagen: pokeData.sprites.front_default, // Puede ser null
+          tipos: pokeData.types.map(t => t.type.name),
+        });
       }
 
       setPokemonesPorTipo(detalles);
@@ -126,7 +124,11 @@ const PokemonFetcher = () => {
         {pokemonesAleatorios.map(pokemon => (
           <div key={pokemon.id} className="pokemon-card">
             <h3>{capitalizar(pokemon.nombre)}</h3>
-            <img src={pokemon.imagen} alt={pokemon.nombre} />
+            {pokemon.imagen ? (
+              <img src={pokemon.imagen} alt={pokemon.nombre} />
+            ) : (
+              <p>sin imagen</p>
+            )}
             <p>Tipos: {pokemon.tipos.map(capitalizar).join(', ')}</p>
           </div>
         ))}
@@ -153,7 +155,11 @@ const PokemonFetcher = () => {
             {pokemonesPorTipo.map(pokemon => (
               <div key={pokemon.id} className="pokemon-card">
                 <h3>{capitalizar(pokemon.nombre)}</h3>
-                <img src={pokemon.imagen} alt={pokemon.nombre} />
+                {pokemon.imagen ? (
+                  <img src={pokemon.imagen} alt={pokemon.nombre} />
+                ) : (
+                  <p>[sin imagen]</p>
+                )}
                 <p>Tipos: {pokemon.tipos.map(capitalizar).join(', ')}</p>
               </div>
             ))}
